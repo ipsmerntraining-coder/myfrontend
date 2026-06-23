@@ -1,178 +1,262 @@
-
+//Edit Customer Profile
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 function EditCustomerProfile({ user, onClose, onUpdate }) {
+  const API = process.env.REACT_APP_BASE_API_URL;
+
   const [formData, setFormData] = useState(null);
   const [stlist, setStList] = useState([]);
   const [ctlist, setCtList] = useState([]);
   const [newImage, setNewImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [errors, setErrors] = useState({});
- const REACT_APP_BASE_API_URL=process.env.REACT_APP_BASE_API_URL;
-  // Load existing customer + states
+  const [loading, setLoading] = useState(false);
+
+  // Load Customer Details
   useEffect(() => {
-    axios
-      .get(`${REACT_APP_BASE_API_URL}/customer/getcustomerdetails/${user.Cid}`)
-      .then((res) => {
-        setFormData(res.data);
-
-        if (res.data.StId) {
-          axios
-            .get(`${REACT_APP_BASE_API_URL}/city/showcitybystate/${res.data.StId}`)
-            .then((ctRes) => setCtList(ctRes.data))
-            .catch((err) => console.error(err));
-        }
-      })
-      .catch((err) => console.error(err));
-
-    axios
-      .get(`${REACT_APP_BASE_API_URL}/state/show/`)
-      .then((res) => setStList(res.data))
-      .catch((err) => console.error(err));
+    loadCustomer();
+    loadStates();
   }, [user.Cid]);
+
+  const loadCustomer = async () => {
+    try {
+      const res = await axios.get(
+        `${API}/customer/getcustomerdetails/${user.Cid}`
+      );
+
+      setFormData(res.data);
+
+      if (res.data.StId) {
+        loadCities(res.data.StId);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const loadStates = async () => {
+    try {
+      const res = await axios.get(`${API}/state/show`);
+      setStList(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const loadCities = async (stid) => {
+    try {
+      const res = await axios.get(
+        `${API}/city/showcitybystate/${stid}`
+      );
+      setCtList(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   if (!formData) return <div>Loading...</div>;
 
-  // Handle input changes
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
-  // Handle state change -> load cities
-  const handleStateChange = (e) => {
+  const handleStateChange = async (e) => {
     const stid = e.target.value;
-    setFormData({ ...formData, StId: stid, CtId: "" });
-    axios
-      .get(`${REACT_APP_BASE_API_URL}/city/showcitybystate/${stid}`)
-      .then((res) => setCtList(res.data))
-      .catch((err) => console.error(err));
+
+    setFormData({
+      ...formData,
+      StId: stid,
+      CtId: "",
+    });
+
+    await loadCities(stid);
   };
 
-  // Handle image selection
   const handleFileChange = (e) => {
     const file = e.target.files[0];
+
+    if (!file) return;
+
     setNewImage(file);
-    setPreview(file ? URL.createObjectURL(file) : null);
+    setPreview(URL.createObjectURL(file));
   };
 
-  // Image URL resolver (works for Cloudinary + local)
   const getImageUrl = (picName) => {
     if (!picName) return "/default-avatar.png";
-    if (picName.startsWith("http")) return picName;
-    return `${REACT_APP_BASE_API_URL}/customerimages/${picName}`;
+
+    if (
+      picName.startsWith("http://") ||
+      picName.startsWith("https://")
+    ) {
+      return picName;
+    }
+
+    return `${API}/customerimages/${picName}`;
   };
 
-  // Validate inputs
   const validate = () => {
-    const errs = {};
-    if (!formData.CustomerName?.trim())
-      errs.CustomerName = "Full Name is required";
-    if (!formData.StId) errs.StId = "State is required";
-    if (!formData.CtId) errs.CtId = "City is required";
-    if (!formData.CAddress?.trim())
+    let errs = {};
+
+    if (!formData.CustomerName?.trim()) {
+      errs.CustomerName = "Name is required";
+    }
+
+    if (!formData.StId) {
+      errs.StId = "State is required";
+    }
+
+    if (!formData.CtId) {
+      errs.CtId = "City is required";
+    }
+
+    if (!formData.CAddress?.trim()) {
       errs.CAddress = "Address is required";
+    }
 
-    const contactStr = String(formData.CContact ?? "");
-    if (!/^\d{10}$/.test(contactStr))
-      errs.CContact = "Contact must be exactly 10 digits";
+    if (!/^\d{10}$/.test(String(formData.CContact || ""))) {
+      errs.CContact = "Contact must be 10 digits";
+    }
 
-    if (!formData.CEmail?.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
-      errs.CEmail = "Valid email is required";
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        formData.CEmail || ""
+      )
+    ) {
+      errs.CEmail = "Valid Email required";
+    }
 
     setErrors(errs);
+
     return Object.keys(errs).length === 0;
   };
 
-  // Handle form submit
   const handleSubmit = async () => {
     if (!validate()) return;
 
+    setLoading(true);
+
     try {
-      const form = new FormData();
-      form.append("CustomerName", formData.CustomerName);
-      form.append("CUserId", formData.CUserId);
-      form.append("StId", formData.StId);
-      form.append("CtId", formData.CtId);
-      form.append("CAddress", formData.CAddress);
-      form.append("CContact", formData.CContact);
-      form.append("CEmail", formData.CEmail);
+      const fd = new FormData();
+
+      fd.append("CustomerName", formData.CustomerName);
+      fd.append("CUserId", formData.CUserId);
+      fd.append("StId", formData.StId);
+      fd.append("CtId", formData.CtId);
+      fd.append("CAddress", formData.CAddress);
+      fd.append("CContact", formData.CContact);
+      fd.append("CEmail", formData.CEmail);
 
       if (newImage) {
-        form.append("CPicName", newImage);
+        fd.append("CPicName", newImage);
       }
 
       const res = await axios.put(
-        `${REACT_APP_BASE_API_URL}/customer/update/${user.Cid}`,
-        form,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        `${API}/customer/update/${user.Cid}`,
+        fd,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
 
       alert(res.data.message);
+
       const updatedUser = res.data.customer;
 
-      // Save updated user in storage
-      const storage =
-        localStorage.getItem("userSession") !== null
-          ? localStorage
-          : sessionStorage;
-      storage.setItem("userSession", JSON.stringify(updatedUser));
+      localStorage.setItem(
+        "userSession",
+        JSON.stringify(updatedUser)
+      );
 
-      onUpdate(updatedUser);
-      onClose();
+      if (onUpdate) {
+        onUpdate(updatedUser);
+      }
+
+      if (onClose) {
+        onClose();
+      }
     } catch (err) {
-      console.error(err);
-      const msg = err.response?.data?.message || "Error updating profile";
-      alert(msg);
+      console.error("Update Error:", err);
+
+      alert(
+        err?.response?.data?.message ||
+          "Profile update failed"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ marginTop: 20, padding: 15, border: "1px solid #ccc" }}>
-      <h4>Edit Profile</h4>
+    <div
+      style={{
+        padding: "20px",
+        border: "1px solid #ddd",
+        borderRadius: "10px",
+      }}
+    >
+      <h3>Edit Profile</h3>
 
-      {/* Name */}
       <input
         type="text"
         name="CustomerName"
         value={formData.CustomerName || ""}
         onChange={handleChange}
-        placeholder="Full Name"
+        placeholder="Customer Name"
       />
-      {errors.CustomerName && (
-        <p style={{ color: "red" }}>{errors.CustomerName}</p>
-      )}
       <br />
+      {errors.CustomerName && (
+        <p style={{ color: "red" }}>
+          {errors.CustomerName}
+        </p>
+      )}
 
-      {/* State */}
-      <select name="StId" value={formData.StId || ""} onChange={handleStateChange}>
-        <option value="">-- Select State --</option>
+      <select
+        value={formData.StId || ""}
+        onChange={handleStateChange}
+      >
+        <option value="">Select State</option>
+
         {stlist.map((s) => (
           <option key={s.stid} value={s.stid}>
             {s.stname}
           </option>
         ))}
       </select>
-      {errors.StId && <p style={{ color: "red" }}>{errors.StId}</p>}
-      <br />
 
-      {/* City */}
+      <br />
+      {errors.StId && (
+        <p style={{ color: "red" }}>{errors.StId}</p>
+      )}
+
       <select
-        name="CtId"
         value={formData.CtId || ""}
-        onChange={(e) => setFormData({ ...formData, CtId: e.target.value })}
+        onChange={(e) =>
+          setFormData({
+            ...formData,
+            CtId: e.target.value,
+          })
+        }
       >
-        <option value="">-- Select City --</option>
+        <option value="">Select City</option>
+
         {ctlist.map((c) => (
           <option key={c.ctid} value={c.ctid}>
             {c.ctname}
           </option>
         ))}
       </select>
-      {errors.CtId && <p style={{ color: "red" }}>{errors.CtId}</p>}
-      <br />
 
-      {/* Address */}
+      <br />
+      {errors.CtId && (
+        <p style={{ color: "red" }}>{errors.CtId}</p>
+      )}
+
       <input
         type="text"
         name="CAddress"
@@ -180,23 +264,29 @@ function EditCustomerProfile({ user, onClose, onUpdate }) {
         onChange={handleChange}
         placeholder="Address"
       />
-      {errors.CAddress && <p style={{ color: "red" }}>{errors.CAddress}</p>}
-      <br />
 
-      {/* Contact */}
+      <br />
+      {errors.CAddress && (
+        <p style={{ color: "red" }}>
+          {errors.CAddress}
+        </p>
+      )}
+
       <input
-        type="tel"
+        type="text"
         name="CContact"
-        value={formData.CContact ?? ""}
-        onChange={(e) =>
-          setFormData({ ...formData, CContact: e.target.value })
-        }
-        placeholder="Contact"
+        value={formData.CContact || ""}
+        onChange={handleChange}
+        placeholder="Contact Number"
       />
-      {errors.CContact && <p style={{ color: "red" }}>{errors.CContact}</p>}
-      <br />
 
-      {/* Email */}
+      <br />
+      {errors.CContact && (
+        <p style={{ color: "red" }}>
+          {errors.CContact}
+        </p>
+      )}
+
       <input
         type="email"
         name="CEmail"
@@ -204,29 +294,59 @@ function EditCustomerProfile({ user, onClose, onUpdate }) {
         onChange={handleChange}
         placeholder="Email"
       />
-      {errors.CEmail && <p style={{ color: "red" }}>{errors.CEmail}</p>}
+
+      <br />
+      {errors.CEmail && (
+        <p style={{ color: "red" }}>
+          {errors.CEmail}
+        </p>
+      )}
+
       <br />
 
-      {/* Profile Image */}
-      <p>Profile Image:</p>
       <img
-        src={preview ? preview : getImageUrl(formData.CPicName)}
-        height={80}
-        width={80}
-        style={{ borderRadius: "50%", objectFit: "cover", border: "1px solid #ddd" }}
+        src={
+          preview
+            ? preview
+            : getImageUrl(formData.CPicName)
+        }
         alt="Customer"
+        width="100"
+        height="100"
+        style={{
+          borderRadius: "50%",
+          objectFit: "cover",
+          border: "2px solid #ddd",
+        }}
       />
+
       <br />
-      <input type="file" onChange={handleFileChange} />
       <br />
 
-      <button onClick={handleSubmit} style={{ marginRight: 10 }}>
-        Save
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+      />
+
+      <br />
+      <br />
+
+      <button
+        onClick={handleSubmit}
+        disabled={loading}
+      >
+        {loading ? "Updating..." : "Save Changes"}
       </button>
-      <button onClick={onClose}>Cancel</button>
+
+      <button
+        onClick={onClose}
+        style={{ marginLeft: "10px" }}
+      >
+        Cancel
+      </button>
     </div>
   );
 }
 
 export default EditCustomerProfile;
-

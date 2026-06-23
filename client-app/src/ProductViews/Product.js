@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./Product.css";
 
-function Product({ data }) {
+function Product({ data, onBack }) {
   const venderid = data;
   const REACT_APP_BASE_API_URL = process.env.REACT_APP_BASE_API_URL;
 
@@ -22,12 +21,12 @@ function Product({ data }) {
 
   /* ---------------- Load categories & PID ---------------- */
   useEffect(() => {
-    //alert(data)
     getNewPid();
+
     axios
       .get(`${REACT_APP_BASE_API_URL}/productcatg/showproductcatg`)
-      .then(res => setPCatgList(res.data))
-      .catch(err => alert(err.message));
+      .then((res) => setPCatgList(res.data))
+      .catch((err) => alert(err.message));
   }, []);
 
   /* ---------------- Load products ---------------- */
@@ -37,22 +36,26 @@ function Product({ data }) {
 
   const fetchProducts = () => {
     if (!venderid) return;
+
     axios
-      .get(`${REACT_APP_BASE_API_URL}/product/showproductbyvender/${venderid}`)
-      .then(res => setPList(res.data))
-      .catch(err => alert(err.message));
+      .get(
+        `${REACT_APP_BASE_API_URL}/product/showproductbyvender/${venderid}`
+      )
+      .then((res) => setPList(res.data))
+      .catch((err) => alert(err.message));
   };
 
   const getNewPid = () => {
     axios
       .get(`${REACT_APP_BASE_API_URL}/product/getmaxpid`)
-      .then(res => setPId(res.data.length + 1))
-      .catch(err => alert(err.message));
+      .then((res) => setPId(res.data.length + 1))
+      .catch((err) => alert(err.message));
   };
 
   /* ---------------- Image select ---------------- */
-  const handleFileChange = e => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
+
     if (!file) return;
 
     setImage({
@@ -65,7 +68,10 @@ function Product({ data }) {
 
   /* ---------------- Upload image ---------------- */
   const handleUpload = async () => {
-    if (!image.data) return alert("Select image first");
+    if (!image.data) {
+      alert("Select image first");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("file", image.data);
@@ -73,15 +79,18 @@ function Product({ data }) {
     try {
       const res = await fetch(
         `${REACT_APP_BASE_API_URL}/product/saveproductimage`,
-        { method: "POST", body: formData }
+        {
+          method: "POST",
+          body: formData,
+        }
       );
 
-      const data = await res.json();
+      const result = await res.json();
 
       if (res.ok) {
-        setPPicName(data.imageUrl); //  CLOUDINARY URL
+        setPPicName(result.imageUrl);
         setImageUploaded(true);
-        alert("Image uploaded");
+        alert("Image uploaded successfully");
       } else {
         alert("Upload failed");
       }
@@ -89,9 +98,20 @@ function Product({ data }) {
       alert(err.message);
     }
   };
-  
+
   /* ---------------- Save / Update ---------------- */
   const handleSaveButton = () => {
+    if (
+      !pname ||
+      !pprice ||
+      !oprice ||
+      !pcatgid ||
+      !ppicname
+    ) {
+      alert("Please fill all fields and upload image");
+      return;
+    }
+
     const obj = {
       pid,
       pname,
@@ -104,20 +124,31 @@ function Product({ data }) {
     };
 
     const apiCall = isEditing
-      ? axios.put(`${REACT_APP_BASE_API_URL}/product/updateproduct/${pid}`, obj)
-      : axios.post(`${REACT_APP_BASE_API_URL}/product/saveproduct`, obj);
+      ? axios.put(
+          `${REACT_APP_BASE_API_URL}/product/updateproduct/${pid}`,
+          obj
+        )
+      : axios.post(
+          `${REACT_APP_BASE_API_URL}/product/saveproduct`,
+          obj
+        );
 
     apiCall
       .then(() => {
-        alert(isEditing ? "Product Updated" : "Product Added");
+        alert(
+          isEditing
+            ? "Product Updated Successfully"
+            : "Product Added Successfully"
+        );
+
         fetchProducts();
         closePopup();
       })
-      .catch(err => alert(err.message));
+      .catch((err) => alert(err.message));
   };
 
   /* ---------------- Edit ---------------- */
-  const handleEdit = item => {
+  const handleEdit = (item) => {
     setPId(item.pid);
     setPName(item.pname);
     setPPrice(item.pprice);
@@ -126,7 +157,7 @@ function Product({ data }) {
     setPCatgId(item.pcatgid);
 
     setImage({
-      preview: item.ppicname, // Cloudinary URL
+      preview: item.ppicname,
       data: "",
     });
 
@@ -136,82 +167,198 @@ function Product({ data }) {
   };
 
   /* ---------------- Delete ---------------- */
-  const handleDelete = pid => {
+  const handleDelete = (pid) => {
     if (!window.confirm("Delete product?")) return;
 
     axios
-      .put(`${REACT_APP_BASE_API_URL}/product/updateproductstatus/${pid}/Inactive`)
+      .put(
+        `${REACT_APP_BASE_API_URL}/product/updateproductstatus/${pid}/Inactive`
+      )
       .then(() => {
-        alert("Product Deleted");
+        alert("Product Deleted Successfully");
         fetchProducts();
       })
-      .catch(err => alert(err.message));
+      .catch((err) => alert(err.message));
   };
 
+  /* ---------------- Close Popup ---------------- */
   const closePopup = () => {
     setShowPopup(false);
     setIsEditing(false);
     setImageUploaded(false);
+
     setPName("");
     setPPrice("");
     setOPrice("");
     setPPicName("");
     setPCatgId("");
-    setImage({ preview: "", data: "" });
+
+    setImage({
+      preview: "",
+      data: "",
+    });
+
     getNewPid();
   };
 
   return (
     <div style={{ padding: 20 }}>
-      <h2 style={{ textAlign: "center" }}>Manage Products</h2>
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20,
+        }}
+      >
+        <button
+          onClick={onBack}
+          style={{
+            background: "#6c757d",
+            color: "#fff",
+            border: "none",
+            padding: "10px 15px",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+        >
+          ← Back
+        </button>
 
-      <button onClick={() => setShowPopup(true)}>➕ Add New Product</button>
+        <h2>Manage Products</h2>
 
-      {/* ================= MODAL ================= */}
+        <button
+          onClick={() => setShowPopup(true)}
+          style={{
+            background: "green",
+            color: "#fff",
+            border: "none",
+            padding: "10px 15px",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+        >
+          ➕ Add New Product
+        </button>
+      </div>
+
+      {/* Modal */}
       {showPopup && (
         <div className="modal-overlay">
           <div className="modal-box">
-            <h3>{isEditing ? "Edit Product" : "Add Product"}</h3>
+            <h3>
+              {isEditing
+                ? "Edit Product"
+                : "Add Product"}
+            </h3>
 
-            <label>Product ID: <b>{pid}</b></label>
+            <label>
+              Product ID : <b>{pid}</b>
+            </label>
 
-            <input placeholder="Name" value={pname} onChange={e => setPName(e.target.value)} />
-            <input type="number" placeholder="Price" value={pprice} onChange={e => setPPrice(e.target.value)} />
-            <input type="number" placeholder="Offer Price" value={oprice} onChange={e => setOPrice(e.target.value)} />
+            <input
+              type="text"
+              placeholder="Product Name"
+              value={pname}
+              onChange={(e) => setPName(e.target.value)}
+            />
 
-            <select value={pcatgid} onChange={e => setPCatgId(e.target.value)}>
-              <option value="">-- Select Category --</option>
-              {pcatglist.map(c => (
-                <option key={c.pcatgid} value={c.pcatgid}>{c.pcatgname}</option>
+            <input
+              type="number"
+              placeholder="Price"
+              value={pprice}
+              onChange={(e) => setPPrice(e.target.value)}
+            />
+
+            <input
+              type="number"
+              placeholder="Offer Price"
+              value={oprice}
+              onChange={(e) => setOPrice(e.target.value)}
+            />
+
+            <select
+              value={pcatgid}
+              onChange={(e) =>
+                setPCatgId(e.target.value)
+              }
+            >
+              <option value="">
+                -- Select Category --
+              </option>
+
+              {pcatglist.map((c) => (
+                <option
+                  key={c.pcatgid}
+                  value={c.pcatgid}
+                >
+                  {c.pcatgname}
+                </option>
               ))}
             </select>
 
-            <input type="file" onChange={handleFileChange} />
+            <input
+              type="file"
+              onChange={handleFileChange}
+            />
 
             {image.preview && (
-              <img src={image.preview} alt="preview" width="90" />
+              <img
+                src={image.preview}
+                alt="Preview"
+                width="100"
+                style={{
+                  borderRadius: "5px",
+                  marginTop: "10px",
+                }}
+              />
             )}
 
-            <button onClick={handleUpload}>Upload Image</button>
+            <button onClick={handleUpload}>
+              Upload Image
+            </button>
 
             <div className="modal-actions">
-              <button onClick={closePopup}>Cancel</button>
-              <button disabled={!imageUploaded} onClick={handleSaveButton}>
-                {isEditing ? "Update" : "Save"}
+              <button onClick={closePopup}>
+                Cancel
+              </button>
+
+              <button
+                disabled={!imageUploaded}
+                onClick={handleSaveButton}
+              >
+                {isEditing
+                  ? "Update Product"
+                  : "Save Product"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ================= TABLE ================= */}
-      <table width="100%" style={{ marginTop: 20,background:"black" }}>
+      {/* Product Table */}
+      <table
+        width="100%"
+        style={{
+          marginTop: 20,
+          background: "black",
+          color: "white",
+        }}
+      >
         <thead>
           <tr>
-            <th>#</th><th>Name</th><th>Price</th><th>Offer</th>
-            <th>Category</th><th>Image</th><th>Status</th><th>Action</th>
+            <th>#</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Offer</th>
+            <th>Category</th>
+            <th>Image</th>
+            <th>Status</th>
+            <th>Action</th>
           </tr>
         </thead>
+
         <tbody>
           {plist.map((item, i) => (
             <tr key={item.pid}>
@@ -219,19 +366,45 @@ function Product({ data }) {
               <td>{item.pname}</td>
               <td>{item.pprice}</td>
               <td>{item.oprice}</td>
-              <td>{pcatglist.find(c => c.pcatgid === item.pcatgid)?.pcatgname}</td>
+
+              <td>
+                {
+                  pcatglist.find(
+                    (c) =>
+                      c.pcatgid === item.pcatgid
+                  )?.pcatgname
+                }
+              </td>
+
               <td>
                 <img
                   src={item.ppicname}
-                  width="50"
-                  style={{ borderRadius: 4 }}
                   alt={item.pname}
+                  width="50"
+                  style={{
+                    borderRadius: "5px",
+                  }}
                 />
               </td>
+
               <td>{item.status}</td>
+
               <td>
-                <button onClick={() => handleEdit(item)}>Edit</button>
-                <button onClick={() => handleDelete(item.pid)}>Delete</button>
+                <button
+                  onClick={() =>
+                    handleEdit(item)
+                  }
+                >
+                  Edit
+                </button>
+
+                <button
+                  onClick={() =>
+                    handleDelete(item.pid)
+                  }
+                >
+                  Delete
+                </button>
               </td>
             </tr>
           ))}
