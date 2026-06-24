@@ -1,23 +1,68 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import AdminLogin from "./AdminViews/AdminLogin";
+import CustomerMain from "./CustomerViews/CustomerMain";
+import VendorMain from "./vendorviews/VendorMain";
+import ProductListforMainPage from "./ProductViews/ProductListforMainPage";
+import "./App.css";
+import mainpic from "./mainpic.jpg"
 
 function App() {
+  const [page, setPage] = useState("");
+
+  if (page === "admin") {
+    return <AdminLogin />;
+  }
+
+  if (page === "customer") {
+    return <CustomerMain />;
+  }
+
+  if (page === "vendor") {
+    return <VendorMain />;
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="app-container">
+      {/* Navigation Bar */}
+      <nav className="navbar">
+        <div className="logo">
+          E-Shopee........
+        </div>
+
+        <div className="nav-buttons">
+          <button
+            className="nav-btn admin-btn"
+            onClick={() => setPage("admin")}
+          >
+            Admin Login
+          </button>
+
+          <button
+            className="nav-btn customer-btn"
+            onClick={() => setPage("customer")}
+          >
+            Customer Portal
+          </button>
+
+          <button
+            className="nav-btn vendor-btn"
+            onClick={() => setPage("vendor")}
+          >
+            Vendor Portal
+          </button>
+        </div>
+      </nav>
+
+      
+      <div className="hero-section">        
+        <img src={mainpic}  alt="mainpic" width={1200} height={250} style={{borderRadius:5}}/>
+      </div>
+     
+      
+      {/* Products */}
+      <div className="product-section">
+        <ProductListforMainPage />
+      </div>
     </div>
   );
 }

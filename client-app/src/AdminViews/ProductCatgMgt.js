@@ -66,7 +66,7 @@ function ProductCatgMgt() {
         <div style={{ textAlign: "center", padding: "20px" }}>
             <h2 style={{ color: "blue" }}>Product Category Form</h2>
 
-            <table style={{ margin: "0 auto" }}>
+            <table style={{ margin: "0 auto" ,backgroundColor:"black"}}>
                 <tbody>
                     <tr>
                         <td>Product Id:</td>
@@ -104,7 +104,7 @@ function ProductCatgMgt() {
                 Product Category List
             </h3>
 
-            <table border="1" style={{ margin: "0 auto", width: "70%", textAlign: "left" }}>
+            <table border="1" style={{backgroundColor:"black", margin: "0 auto", width: "70%", textAlign: "left" }}>
                 <thead>
                     <tr>
                         <th>Id</th>

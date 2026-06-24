@@ -167,16 +167,16 @@ function CityMgt()
     
 
     return(
-        <div>
+        <div style={{backgroundColor:"black"}}>
             <center>
                 <h3>City Management</h3>
                 <div className="myDiv">
                     <center>
-                    <table>
+                    <table style={{backgroundColor:"black"}}>
                         <tr>
                             <td>City Id</td>
                             <td>
-                                <input type="number" onChange={handleCtIdText} value={ctid} className="form-control" />
+                                <input readOnly type="number" onChange={handleCtIdText} value={ctid} className="form-control" />
                             </td>
                         </tr>
                         <tr>
@@ -215,7 +215,7 @@ function CityMgt()
                         <tr>                            
                         </tr>
                     </table>
-                    <table>
+                    <table style={{backgroundColor:"black"}}>
                                 <tr>
                             <td>
                             <button type="submit" onClick={handleAddNewButton}                  
@@ -254,7 +254,7 @@ function CityMgt()
                 </div>
                 <div className="myDiv2">
                 <center>
-                            <table>
+                            <table style={{backgroundColor:"black"}}>
                                 <tr>
                                     <th>City Id</th>
                                     <th>City Name</th>

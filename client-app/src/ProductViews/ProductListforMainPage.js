@@ -53,7 +53,7 @@ const REACT_APP_BASE_API_URL=process.env.REACT_APP_BASE_API_URL;
     axios
       .get(`${REACT_APP_BASE_API_URL}/product/showproductstatus/${pid}`)
       .then((res) => {
-        if (res.data.status === "Active") {
+        //if (res.data.status === "Active") {
           const selected = plist.find((item) => item.pid === pid);
           if (!selected) return;
 
@@ -68,9 +68,9 @@ const REACT_APP_BASE_API_URL=process.env.REACT_APP_BASE_API_URL;
             [pid]: (prev[pid] || 0) + 1,
           }));
           setItemCount((prev) => prev + 1);
-         } else {
-           alert("Product out of Stock");
-         }
+        //  } else {
+        //    alert("Product out of Stock");
+        //  }
       })
       .catch((err) => alert(err));
   };

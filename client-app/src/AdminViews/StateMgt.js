@@ -94,14 +94,14 @@ function StateMgt()
         })
     }
     return(
-        <div>
+        <div style={{backgroundColor:"black"}}>
             <center>
                 <h3>State Management</h3>
-                <table>
+                <table style={{backgroundColor:"black"}}>
                     <tr>
-                        <td>Enter State Id</td>
+                        <td>State Id</td>
                         <td>
-                           <input type='number' onChange={handleStIdText} value={stid} />
+                           <input readOnly type='number' onChange={handleStIdText} value={stid} />
                         </td>
                     </tr>
                     <tr>
@@ -142,7 +142,7 @@ function StateMgt()
                         </td>
                     </tr>
                 </table>
-                <table border={1}>
+                <table border={1} style={{backgroundColor:"black"}}>
                     <tr>
                     <th>State Id</th>
                     <th>State Name</th>
